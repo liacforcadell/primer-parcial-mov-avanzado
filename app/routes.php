@@ -36,6 +36,16 @@ return function (App $app) {
         return $response->withHeader('Content-Type', 'application/json');
     });
 
+    $app->get('/producto', function (Request $request, Response $response) {
+        $db = $this->get(PDO::class);
+        $sth = $db->prepare("SELECT * FROM producto ORDER BY nombre");
+        $sth->execute();
+        $data = $sth->fetchAll(PDO::FETCH_ASSOC);
+        $payload = json_encode($data);
+        $response->getBody()->write($payload);
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+
     $app->post('/cliente', function (Request $request, Response $response) {
         $db = $this->get(PDO::class);
         $input=$request->getParsedBody();
@@ -47,6 +57,28 @@ return function (App $app) {
         $sth->execute();
         $data = $db->lastInsertId();
         $id_json = json_encode($data);
+        $response->getBody()->write($id_json);
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+
+    $app->put('/producto/{id}', function (Request $request, Response $response,$args) {
+        $db = $this->get(PDO::class);
+        $input=$request->getParsedBody();
+        $productId = $args['id'];
+        $cantidad = $input['cantidad'];
+        $agregar = $input['agregar']; 
+
+        if($agregar) {
+            $sql = "UPDATE producto SET existencia = existencia + :cantidad WHERE producto_id = :id";
+        } else {
+            $sql = "UPDATE producto SET existencia = existencia - :cantidad WHERE producto_id = :id";
+        }
+
+        $sth = $db->prepare($sql);
+        $sth->bindParam(":cantidad", $cantidad, PDO::PARAM_INT);
+        $sth->bindParam(":id", $productId, PDO::PARAM_INT);
+        $sth->execute();
+        $id_json = json_encode($productId);
         $response->getBody()->write($id_json);
         return $response->withHeader('Content-Type', 'application/json');
     });
