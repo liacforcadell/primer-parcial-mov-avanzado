@@ -83,6 +83,23 @@ return function (App $app) {
         return $response->withHeader('Content-Type', 'application/json');
     });
 
+    $app->delete('/pedido/{id}', function (Request $request, Response $response,$args) {
+        $db = $this->get(PDO::class);
+        $input=$request->getParsedBody();
+        $pedidoId = $args['id'];
+
+        $deleteDP = $db->prepare("DELETE FROM detallepedido WHERE pedido_id = :pedidoId");
+        $deleteDP->bindParam(":pedidoId", $pedidoId, PDO::PARAM_INT);
+        $deleteDP->execute();
+
+        $sth = $db->prepare("DELETE FROM pedido WHERE pedido_id = :pedidoId");
+        $sth->bindParam(":pedidoId", $pedidoId, PDO::PARAM_INT);
+        $sth->execute();
+        $id_json = json_encode($pedidoId);
+        $response->getBody()->write($id_json);
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+
     $app->group('/users', function (Group $group) {
         $group->get('', ListUsersAction::class);
         $group->get('/{id}', ViewUserAction::class);
